@@ -1,0 +1,11 @@
+---
+- hosts: htpc
+  become: true
+  roles:
+    - basic
+  vars:
+    # мини-телевизор
+    - resolution: 1360x768
+    - rr: 60
+
+...
