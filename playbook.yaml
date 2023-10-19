@@ -4,8 +4,8 @@
   roles:
     - basic
   vars:
-    # мини-телевизор
-    - resolution: 1360x768
+    # режим дисплея
+    - resolution: 1360x768 # мини-телевизор
     - rr: 60
 
 ...

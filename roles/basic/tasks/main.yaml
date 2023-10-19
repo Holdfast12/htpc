@@ -1,0 +1,122 @@
+- name: set timezone to Moscow
+  timezone:
+    name: Europe/Moscow
+
+- name: packages install
+  community.general.pacman:
+    name:
+    - xorg-xinit
+    - xorg-server
+    - intel-media-driver # драйвер для Intel HD
+    - alsa-utils
+    - pulseaudio-alsa
+    - pulseaudio
+    - pulsemixer
+    - firefox
+    - telegram-desktop
+    - vlc
+    - pcmanfm
+
+    - i3-wm
+    - i3status
+    - xss-lock
+    - i3lock
+    - dex
+
+    - python-pyxdg
+    - sof-firmware
+
+    # mocp
+    - moc
+    - wavpack
+    - libmpcdec
+    - taglib
+    - ffmpeg4.4
+    - faad2
+
+    state: latest
+
+- name: uninstall
+  community.general.pacman:
+    name:
+    - network-manager-applet
+    - pamixer
+    - alacritty
+    - ranger
+    - terminator
+    - mc
+    state: absent
+
+- name: add group
+  group:
+    name: tatiana
+    gid: 6033
+    state: present
+
+- name: add user
+  ansible.builtin.user:
+    name: tatiana
+    uid: 6033
+    shell: /bin/bash
+    group: tatiana
+    groups: audio, video
+    append: yes
+
+- name: xinit from anybody
+  copy:
+    dest: /etc/X11/Xwrapper.config
+    content: |
+      allowed_users=anybody
+      needs_root_rights=yes
+    owner: root
+    group: root
+    mode: 0644
+
+- name: copy test mp3 file
+  copy:
+    src: instasamka.mp3
+    dest: /home/tatiana/instasamka.mp3
+    owner: tatiana
+    group: tatiana
+    mode: '0644'
+
+- name: Set a hostname
+  ansible.builtin.hostname:
+    name: htpc
+
+- name: set a hostname
+  copy:
+    dest: /etc/hostname
+    content: | 
+      htpc
+    owner: root
+    group: root
+    mode: 0644
+
+- name: delete lines from xinitrc
+  lineinfile: 
+    dest: /etc/X11/xinit/xinitrc
+    state: absent
+    regexp: '^{{ item }}'
+  with_items:
+    - twm
+    - xclock
+    - xterm
+    - exec
+
+- name: add xinit script
+  copy:
+    dest: /etc/X11/xinit/xinitrc.d/60-i3.sh
+    content: |
+      pcmanfm &
+      firefox &
+      exec i3
+    owner: root
+    group: root
+    mode: 0755
+
+- name: delete lines from i3 config
+  lineinfile: 
+    dest: /home/tatiana/.config/i3/config
+    state: absent
+    regexp: '^exec --no-startup-id nm-applet'
