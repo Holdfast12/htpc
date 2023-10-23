@@ -1,5 +1,3 @@
-# Мультимедийный комп на archlinux на базовых репозиториях
-## 1. Загрузка с usb-flash
 
 pacman -Sw virtualbox-guest-utils --cachedir /mnt/ && repo-add /mnt/custom.db.tar.gz /mnt/*.pkg.tar.zst
 
@@ -21,8 +19,6 @@ perl -MCPAN -e 'install Font::FreeType'
 
 
 
-видео с дропающимися эмодзи
-Советы которые спасут тебе Жизнь #shorts
 
 /etc/polybar/config.ini
 
