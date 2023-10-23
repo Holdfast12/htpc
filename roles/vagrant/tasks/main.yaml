@@ -1,0 +1,18 @@
+- name: special setup for vagrant
+  block:
+  - name: remove virtualbox-guest-utils-nox
+    community.general.pacman:
+      name:
+      - virtualbox-guest-utils-nox
+      state: absent
+
+  - name: insall guest utils
+    community.general.pacman:
+      name:
+      # - virtualbox-guest-iso
+      - virtualbox-guest-utils
+      - xf86-video-fbdev
+      - xf86-video-vesa
+      state: latest
+
+  when: (vagrant == true)

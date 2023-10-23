@@ -2,10 +2,12 @@
 - hosts: htpc
   become: true
   roles:
-    - basic
+    - common
+    - vagrant
+    - reboot
   vars:
     # режим дисплея
-    - resolution: 1360x768 # мини-телевизор
-    - rr: 60
+    resolution: 1360x768 # мини-телевизор
+    rr: 60
 
 ...

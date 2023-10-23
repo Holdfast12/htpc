@@ -1,0 +1,176 @@
+- name: set timezone to Moscow
+  timezone:
+    name: Europe/Moscow
+
+- name: create locale
+  community.general.locale_gen:
+    name: ru_RU.UTF-8
+    state: present
+
+- name: set locale
+  become: yes
+  command: localectl set-locale ru_RU.UTF-8
+
+- name: add user in Audio and Video
+  ansible.builtin.user:
+    name: vagrant
+    groups: audio, video
+    append: yes
+
+- blockinfile:
+    path: /etc/pacman.conf
+    insertafter: '# REPOSITORIES'
+    block: |
+      [custom]
+      SigLevel = PackageRequired
+      Server = file:///mnt
+
+- name: update pacman db
+  community.general.pacman:
+    update_cache: true
+
+- name: packages
+  community.general.pacman:
+    name:
+    # для awx
+    # - ansible
+    # - docker
+    # - docker-buildx
+    # - openssl
+    # - python-pip
+    # - make
+    
+    - sudo
+    - git
+    - vim
+    - nano
+    - htop
+
+    # графика
+    - xorg-xinit
+    - xorg-server
+    - i3-wm
+    - firefox
+    - polybar
+    - python-pyxdg
+    - vlc
+    - terminator
+    
+    # mocp
+    - alsa-utils
+    - pulseaudio
+    - pulseaudio-alsa
+    - pulsemixer
+    - moc
+    - wavpack
+    - libmpcdec
+    - taglib
+    - ffmpeg4.4
+    - faad2
+
+    state: latest
+
+- name: sudo vagrant
+  copy:
+    dest: /etc/sudoers.d/vagrant
+    content: |
+      vagrant ALL=(ALL) NOPASSWD: ALL
+    owner: root
+    group: root
+    mode: 0440
+
+- name: xinit from anybody
+  copy:
+    dest: /etc/X11/Xwrapper.config
+    content: |
+      allowed_users=anybody
+      needs_root_rights=yes
+    owner: root
+    group: root
+    mode: 0644
+
+- name: delete lines from xinitrc
+  lineinfile: 
+    dest: /etc/X11/xinit/xinitrc
+    state: absent
+    regexp: '^{{ item }}'
+  with_items:
+    - twm
+    - xclock
+    - xterm
+    - exec
+
+- name: add xinit script
+  copy:
+    dest: /etc/X11/xinit/xinitrc.d/60-i3.sh
+    content: |
+      terminator &
+      vlc &
+      firefox &
+      exec i3
+    owner: root
+    group: root
+    mode: 0755
+
+- name: copy i3wm config
+  ansible.builtin.template:
+    src: i3wm_config
+    dest: /etc/i3/config
+    owner: root
+    group: root
+    mode: 0666
+
+- name: create terminator config dir
+  file: 
+    path: "/etc/xdg/terminator/"
+    state: directory
+    group: root
+    owner: root
+    mode: 0751
+
+- name: terminator config
+  copy:
+    content: ""
+    dest: /etc/xdg/terminator/config
+    force: false
+    group: root
+    owner: root
+    mode: 0666
+
+- name: polybar config
+  file:
+    path: /etc/polybar/config.ini
+    group: root
+    owner: root
+    mode: 0666
+
+- name: Check alt+shift en<->ru config
+  stat:
+    path: /etc/X11/xorg.conf.d/00-keyboard.conf
+  register: stat_result
+
+- name: set alt+shift en<->ru
+  ansible.builtin.shell: localectl set-x11-keymap us,ru "" grp:alt_shift_toggle
+  when: not stat_result.stat.exists
+
+- name: disable wallpapers
+  ansible.builtin.lineinfile:
+    path: /etc/polybar/config.ini
+    regexp: '^pseudo-transparency = true'
+    line: 'pseudo-transparency = false'
+
+- name: copy find_font
+  ansible.builtin.template:
+    src: test-fonts.pl
+    dest: /home/vagrant/test-fonts.pl
+    owner: vagrant
+    group: vagrant
+    mode: 0666
+
+- name: copy test mp3 file
+  copy:
+    src: instasamka.mp3
+    dest: /home/vagrant/instasamka.mp3
+    owner: vagrant
+    group: vagrant
+    mode: '0644'

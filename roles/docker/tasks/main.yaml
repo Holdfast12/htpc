@@ -1,0 +1,65 @@
+- name: add user in docker group
+  ansible.builtin.user:
+    name: vagrant
+    groups: docker
+    append: yes
+
+- name: Enable docker
+  ansible.builtin.service:
+    name: docker
+    enabled: yes
+    state: started
+
+- name: get latest version of docker-compose
+  ansible.builtin.shell: |
+    curl --silent https://api.github.com/repos/docker/compose/releases/latest | grep -Po '"tag_name": "\K.*\d' | sed 's/v//g'
+  register: check_docker_compose_latest
+
+- set_fact:
+    docker_compose_latest={{ check_docker_compose_latest.stdout }}
+
+- name: register current number version
+  ansible.builtin.shell: |
+    /mnt/docker-compose version --short
+  ignore_errors: True
+  register: check_docker_compose_current
+
+- set_fact:
+    docker_compose_current=0
+  when: check_docker_compose_current.stderr
+
+- set_fact:
+    docker_compose_current={{ check_docker_compose_current.stdout }}
+  when: check_docker_compose_current.stdout
+
+- name: compare versions
+  debug:
+    msg: 'current: {{ docker_compose_current }}, latest: {{ docker_compose_latest }}'
+
+- name: download docker-compose
+  block:
+  - ansible.builtin.get_url:
+      url: 'https://github.com/docker/compose/releases/download/v{{ docker_compose_latest }}/docker-compose-{{ ansible_system }}-{{ ansible_userspace_architecture }}'
+      dest: '/mnt/docker-compose'
+      force: true
+      owner: root
+      group: root
+      mode: '0755'
+  - ansible.builtin.copy:
+      src: '/mnt/docker-compose'
+      dest: '/usr/local/bin/'
+      remote_src: yes
+      owner: root
+      group: root
+      mode: '0755'
+      force: true
+  when: (docker_compose_current != docker_compose_latest)
+
+- name: copy docker-compose
+  ansible.builtin.copy:
+    src: '/mnt/docker-compose'
+    dest: '/usr/local/bin/'
+    remote_src: yes
+    owner: root
+    group: root
+    mode: '0755'
